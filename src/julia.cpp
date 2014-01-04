@@ -5,7 +5,9 @@
 #include <time.h>
 #include <math.h>
 #include "functions.h"
-
+#include <string.h>
+//#include <string>
+#include <sstream>
 
 #define TOLERANCE .01
 #define INFINITY 100000000000000 //10000000000000000000
@@ -53,20 +55,21 @@ void main(int argc, char *argv[])
   nrdRGB * nrdBuffer;
   unsigned long buffIndex=0;
   int row, col;
-  int grayOrNot=0;
+  //int grayOrNot=0;
 
 
   cout << "Desired Image Width:  ";
   cin >> pixelWidth;
-  cout << "Desired Image Height:  ";
-  cin >> pixelHeight;
+  //cout << "Desired Image Height:  ";
+  //cin >> pixelHeight;
+  pixelHeight= pixelWidth;
   cout << "Re(c):  ";
   cin >> Ca;
   cout << "Im(c):  ";
   cin >> Cb;
   cout << "X bound:  +/- ";
   cin >> Xmax;
-  //let the spaghetti code begin
+  /*let the spaghetti code begin
   grayOnOff:
   cout << "Gray scale on <1> or off <0> ?  ";
   cin >> grayOrNot;
@@ -80,6 +83,7 @@ void main(int argc, char *argv[])
     cerr << "invalid gray scale choice\n";
     goto grayOnOff;
   }
+  */
   cout << "Enter gray scale scaling factor between 0 and 255 inclusive  ";
   cin >> cosScale;
 
@@ -95,7 +99,7 @@ void main(int argc, char *argv[])
     cerr << "I need 50 megs to run.  Please free up some memory.";
     return;
   }
-  cerr << "Let's get the show on the road, boys!\n";
+  //cerr << "Let's get the show on the road, boys!\n";
 
   switch(functionType)
   {
@@ -122,7 +126,7 @@ void main(int argc, char *argv[])
 
   factor = 2*Xmax/pixelWidth;
 
-  cerr << "we's about to start the construction of the nrd FILE\n";
+  cerr << "we are about to start the construction of the nrd FILE\n";
   FILE *output;
   output = fopen("temp.nrd","wb");
   fwrite(&pixelHeight,4,1,output);
@@ -152,7 +156,39 @@ void main(int argc, char *argv[])
 
   fclose(output);
   free(nrdBuffer);
-  nrd2bmp("temp.nrd", argv[1]);
+
+  //build a output file name based on input parameters
+  cerr<< "\nabout to start the badness";
+  string out;
+  char * outfile;
+  //cerr << l << "hello";
+  if( argv[1]==NULL )
+  {
+    cerr<<"\n it has begun";
+    //Stringsream allows srings to be manipulated like strings
+    //still think java is easier
+    stringstream theSS;
+    //concatination isnt all it could be
+    theSS << "P_" << pixelWidth;
+    theSS << ".R_";
+    theSS << Ca;
+    theSS << ".I_" ;
+    theSS << Cb;
+    theSS << ".W_" ;
+    theSS << Xmax;
+    theSS << ".F_" << functionType;
+    theSS <<  ".bmp";
+    out=theSS.str();
+    //convert string to char*
+    outfile = &out[0];
+    cerr << outfile;
+  }
+
+  //user entered a outputfile so lets use it
+  else{ outfile = argv[1]; }
+
+
+  nrd2bmp("temp.nrd", outfile);
   //silent mode!!!!!!!
   //cerr << "\a";
   /*
