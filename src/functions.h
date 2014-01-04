@@ -1,3 +1,6 @@
+#define FLAG false
+#define INFINITY 100000000000000
+
 double aSquare(double Za, double Zb)
 {
   return (pow(Za,2) - pow(Zb,2));
@@ -30,12 +33,41 @@ double bHepta(double Za, double Zb)
 
 double ae(double Za, double Zb)
 {
-  return (exp(Za)*cos(Zb));
+  if(FLAG){ cerr << "exp(Za)*cos(Zb) is " << exp(Za)*cos(Zb) << endl;}
+
+  double number; //= exp(Za);
+  //check to make sure that number is not so small as to cause an underflow
+  //.000000000000001 = 10^-15 < 10^-17 ~= 308^.5 = smallest (largest) double exponent
+  if( Za > 50 )
+  {
+    return INFINITY + 1;
+  }
+  if( Za < -50 )
+  {
+    return 0;
+  }
+  else{ number = exp( Za ); }
+  return (number*cos(Zb));//(exp(Za)*cos(Zb));
 }
 
 double be(double Za, double Zb)
 {
-  return (exp(Za)*sin(Zb));
+  if(FLAG){ cerr << "exp(Za)*sin(Zb) is " << exp(Za)*sin(Zb) << endl;}
+
+  double number; //= exp(Za);
+  //check to make sure that number is not so small as to cause an underflow
+  //.000000000000001 = 10^-15 < 10^-17 ~= 308^.5 = smallest (largest) double exponent
+  //this is no longer relevant
+  if( Za > 50 )
+  {
+    return INFINITY + 1;
+  }
+  if( Za < -50 )
+  {
+    return 0;
+  }
+  else{ number = exp( Za ); }
+  return (number*sin(Zb));
 }
 
 class nrdRGB

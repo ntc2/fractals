@@ -7,17 +7,43 @@
 #include "functions.h"
 
 
-#define INFINITY 10000000000000000000
+#define TOLERANCE .01
+#define INFINITY 100000000000000 //10000000000000000000
+//changed max its to a variable to allow runtime modification
+/*
 #define MAXITS 100
+*/
+//computer doesnt agree that its such a hot idea so ill try again later
+const int MAXITS = 100;
+
 #define PI 3.1415926535897932384626433832795028841971693993751
+#define NATHANFLAG false
+#define SLOWMODE true
+
 
   double (*aFunction)        (double, double);
   double (*bFunction)        (double, double);
 
 nrdRGB juliaTest(double, double, double, double);
 
+//added to avoid monotonous recompile. number represents scale factor for arccos directed
+//greyscale application
+int cosScale = 255;
+//added to avoid monotonous recompile. allows choice between grey scale and and contrast
+bool grayScale = false;
+
+
 void main(int argc, char *argv[])
 {
+
+  if(NATHANFLAG){cerr << "pow(10000000000000000000, 2) is " << pow(10000000000000000000, 2)
+    << endl;}
+  if(NATHANFLAG){cerr << "abs of -1 is " << abs( -1 ) << endl;}
+  if(NATHANFLAG){cerr << "abs of .98 - 1.34 is " << abs( .98 - 1.34 ) << endl;}
+  //set gray scale on or off and adjust scale on gray scale application
+  //grayScale = argv[2];
+  //cosScale = argc;
+  //once again getting beat on by c++
 
   int pixelWidth, pixelHeight;
   double Ca, Cb;
@@ -27,6 +53,8 @@ void main(int argc, char *argv[])
   nrdRGB * nrdBuffer;
   unsigned long buffIndex=0;
   int row, col;
+  int grayOrNot=0;
+
 
   cout << "Desired Image Width:  ";
   cin >> pixelWidth;
@@ -38,6 +66,23 @@ void main(int argc, char *argv[])
   cin >> Cb;
   cout << "X bound:  +/- ";
   cin >> Xmax;
+  //let the spaghetti code begin
+  grayOnOff:
+  cout << "Gray scale on <1> or off <0> ?  ";
+  cin >> grayOrNot;
+  if( grayOrNot == 1 )
+  {
+    grayScale = true;
+  }
+
+  else if( grayOrNot != 0 )
+  {
+    cerr << "invalid gray scale choice\n";
+    goto grayOnOff;
+  }
+  cout << "Enter gray scale scaling factor between 0 and 255 inclusive  ";
+  cin >> cosScale;
+
   chooseFunc:
   cout << "Function to iterate (2,3,7, or e):  ";
   cin >> functionType;
@@ -50,7 +95,7 @@ void main(int argc, char *argv[])
     cerr << "I need 50 megs to run.  Please free up some memory.";
     return;
   }
-  cerr << "Let's get the show on the road, boys!";
+  cerr << "Let's get the show on the road, boys!\n";
 
   switch(functionType)
   {
@@ -77,7 +122,7 @@ void main(int argc, char *argv[])
 
   factor = 2*Xmax/pixelWidth;
 
-  cerr << "we's about to start the FILE shit";
+  cerr << "we's about to start the construction of the nrd FILE\n";
   FILE *output;
   output = fopen("temp.nrd","wb");
   fwrite(&pixelHeight,4,1,output);
@@ -90,12 +135,15 @@ void main(int argc, char *argv[])
     for (col=0; col<pixelWidth; col++)
     {
       double Za=((double)col-(double)pixelWidth/2)*factor;
+      if(NATHANFLAG){cerr << "Za is " << Za << endl;}
       double Zb=((double)row-(double)pixelHeight/2)*-factor;
+      if(NATHANFLAG){cerr << "Zb is " << Zb << endl;}
       nrdBuffer[buffIndex]= juliaTest(Za,Zb, Ca, Cb); buffIndex++;//RGB value;
     }
-    if (buffIndex>=bufferSize)//changing /3 to /1 :), it used to be 3 because
+    if (buffIndex>=bufferSize / 1)//changing /3 to /1 :), it used to be 3 because
     {
-      cerr << "We's in the if(buffIndex >= shit";
+      cerr << " bufferIndex is >= bufferSize; ie a buffer has been"
+          <<" filled during nrd file creation\n";
       fwrite(nrdBuffer,buffIndex,sizeof(nrdRGB),output);
       buffIndex=0;
     }
@@ -105,8 +153,13 @@ void main(int argc, char *argv[])
   fclose(output);
   free(nrdBuffer);
   nrd2bmp("temp.nrd", argv[1]);
-  cerr << "\a";
+  //silent mode!!!!!!!
+  //cerr << "\a";
+  /*
   system(argv[1]);
+  */
+  //tells the system to open the newly created bmp file but seems to
+  //cause serious problems (full system halt!!!)
 }
 
 
@@ -119,28 +172,51 @@ nrdRGB juliaTest(double Za, double Zb, double Ca, double Cb)
   aHistory[0]=Za;
   bHistory[0]=Zb;
   long i=0;
-  while (( pow(Za,2) + pow(Zb,2) <= pow(INFINITY,2)) && (i<MAXITS))   //while the abs(Z) < "infinity" && we're still iterating
-  {                                //(note that both sides of inequality are squared for
-    i++;                              //efficiency.)
+  //while the abs(Z) < "infinity" && we're still iterating
+  //note that both sides of inequality are squared for efficiency
+  while (( pow(Za,2) + pow(Zb,2) <= pow(INFINITY,2)) && (i<MAXITS))//the square of infinity ¶:)
+  {
+    i++;
     aHistory[i] = aFunction(Za,Zb) + Ca;
     bHistory[i] = bFunction(Za,Zb) + Cb;
     Za = aHistory[i];
     Zb = bHistory[i];
-    for (int j=0;j<i;j++)
+
+    //bool slowMode = false;
+    if(SLOWMODE)
     {
-      if ((Za==aHistory[j])&&(Zb==bHistory[i]))
+      for (int j=0;j<i;j++)
       {
-        returnValue.R=255;
-        returnValue.G=j;
-        returnValue.B=0;
-        return returnValue;
+        if(false){cerr << "checking for stable point, " << i << ", " << j << endl;}
+        //if ((Za==aHistory[j])&&(Zb==bHistory[i]))
+        if ( ( fabs((float)(Za - aHistory[j])) < TOLERANCE )
+          && ( fabs((float)(Zb - bHistory[i])) < TOLERANCE) )
+        {
+          //cerr << "found a stable point, orbit value is " << j << endl;
+          returnValue.R=255;
+          returnValue.G=(35*j)%256;   //maybe this will be alittle more interesting
+          returnValue.B=0;
+          return returnValue;
+        }
       }
     }
+    //this was pretty stupid
+    /*
+    else
+    {
+      returnValue.R=255;
+      returnValue.G=0;
+      returnValue.B=0;
+      return returnValue;
+    }
+    */
   }
 
   if (i<MAXITS)
   {
-    returnValue.R=(unsigned char)acos(((double)(MAXITS-2*i)/MAXITS))*255/(PI);
+    if( grayScale ){returnValue.R
+      =( (((unsigned char)( acos((double)(MAXITS-2*i)/MAXITS)*cosScale/(PI))*25 )% 256 ) );}
+    else{returnValue.R = 0;}
     returnValue.G=returnValue.R;
     returnValue.B=returnValue.R;
     return returnValue;
@@ -148,8 +224,8 @@ nrdRGB juliaTest(double Za, double Zb, double Ca, double Cb)
   else
   {
     returnValue.R=255;
-    returnValue.G=255;
-    returnValue.B=255;
+    returnValue.G=(10*i)%256;
+    returnValue.B=0;
     return returnValue;
   }
 }
