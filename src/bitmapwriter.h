@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 //#include <math.h>
-#include <iostream.h>
+#include <iostream>
+
+using namespace std;
 
 #define TWENTYFOURMB 50000000 //25165824
 #define DEBUG true

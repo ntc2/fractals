@@ -1,5 +1,5 @@
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 #include "bitmapwriter.h"
 #include <stdlib.h>
 #include <time.h>
@@ -8,6 +8,8 @@
 #include <string.h>
 //#include <string>
 #include <sstream>
+
+using namespace std;
 
 #define TOLERANCE .01
 #define INFINITY 100000000000000 //10000000000000000000
