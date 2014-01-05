@@ -1,4 +1,4 @@
-all: julia
+all: tmp/julia
 
 # Make will also look in these dirs for dependencies (and targets!).
 # Names found in these dirs get translated, so the 'julia'
@@ -6,7 +6,7 @@ all: julia
 # the auto var '$<' do the right thing.
 VPATH = src
 
-julia: julia.cpp bitmapwriter.h functions.h tmp
+tmp/julia: julia.cpp functions.h tmp
 	g++ -Wall -o $@ $<
 
 tmp:

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include "bitmapwriter.h"
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
@@ -37,7 +36,7 @@ int cosScale = 255;
 bool grayScale = false;
 
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 
   if(NATHANFLAG){cerr << "pow(10000000000000000000, 2) is " << pow(10000000000000000000, 2)
@@ -99,7 +98,7 @@ void main(int argc, char *argv[])
   if (nrdBuffer==NULL)
   {
     cerr << "I need 50 megs to run.  Please free up some memory.";
-    return;
+    return 1;
   }
   //cerr << "Let's get the show on the road, boys!\n";
 
@@ -189,8 +188,8 @@ void main(int argc, char *argv[])
   //user entered a outputfile so lets use it
   else{ outfile = argv[1]; }
 
-
-  nrd2bmp("temp.nrd", outfile);
+  return 0;
+  //nrd2bmp("temp.nrd", outfile);
   //silent mode!!!!!!!
   //cerr << "\a";
   /*

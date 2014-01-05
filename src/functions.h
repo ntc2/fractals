@@ -1,3 +1,7 @@
+#include <iostream>
+
+using namespace std;
+
 #define FLAG false
 #define INFINITY 100000000000000
 
