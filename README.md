@@ -8,3 +8,10 @@ I'm told the old code generates bitmaps with bad headers (at least
 when run in wine).
 
 See also: comically ugly web page.
+
+Dependencies
+------------
+
+Lib png++ (http://www.nongnu.org/pngpp/doc/0.2.5/):
+
+    sudo aptitude install libpng++-dev
