@@ -7,6 +7,7 @@
 #include <string.h>
 //#include <string>
 #include <sstream>
+#include <png++/png.hpp>
 
 using namespace std;
 
@@ -27,7 +28,7 @@ const int MAXITS = 100;
   double (*aFunction)        (double, double);
   double (*bFunction)        (double, double);
 
-nrdRGB juliaTest(double, double, double, double);
+png::rgb_pixel juliaTest(double, double, double, double);
 
 //added to avoid monotonous recompile. number represents scale factor for arccos directed
 //greyscale application
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
   if(NATHANFLAG){cerr << "pow(10000000000000000000, 2) is " << pow(10000000000000000000, 2)
     << endl;}
   if(NATHANFLAG){cerr << "abs of -1 is " << abs( -1 ) << endl;}
-  if(NATHANFLAG){cerr << "abs of .98 - 1.34 is " << abs( .98 - 1.34 ) << endl;}
+  if(NATHANFLAG){cerr << "abs of .98 - 1.34 is " << fabs( .98 - 1.34 ) << endl;}
   //set gray scale on or off and adjust scale on gray scale application
   //grayScale = argv[2];
   //cosScale = argc;
@@ -53,8 +54,6 @@ int main(int argc, char *argv[])
   double factor;
   double Xmax;
   char functionType;
-  nrdRGB * nrdBuffer;
-  unsigned long buffIndex=0;
   int row, col;
   //int grayOrNot=0;
 
@@ -92,15 +91,7 @@ int main(int argc, char *argv[])
   cout << "Function to iterate (2,3,7, or e):  ";
   cin >> functionType;
 
-  unsigned long bufferSize=(52428800-(52428800%(3*pixelWidth)))/3; //make sure the buffer = 0 (mod row*3)
-  nrdBuffer = (nrdRGB *) calloc(bufferSize,sizeof(nrdRGB));
-  cerr << sizeof(nrdRGB) << "\n";
-  if (nrdBuffer==NULL)
-  {
-    cerr << "I need 50 megs to run.  Please free up some memory.";
-    return 1;
-  }
-  //cerr << "Let's get the show on the road, boys!\n";
+  png::image< png::rgb_pixel > image(pixelWidth, pixelHeight);
 
   switch(functionType)
   {
@@ -127,14 +118,6 @@ int main(int argc, char *argv[])
 
   factor = 2*Xmax/pixelWidth;
 
-  cerr << "we are about to start the construction of the nrd FILE\n";
-  FILE *output;
-  output = fopen("temp.nrd","wb");
-  fwrite(&pixelHeight,4,1,output);
-  fwrite(&pixelWidth,4,1,output);
-  cerr << "we passed the fwrite";
-
-
   for (row=0; row<pixelHeight; row++)
   {
     for (col=0; col<pixelWidth; col++)
@@ -143,20 +126,9 @@ int main(int argc, char *argv[])
       if(NATHANFLAG){cerr << "Za is " << Za << endl;}
       double Zb=((double)row-(double)pixelHeight/2)*-factor;
       if(NATHANFLAG){cerr << "Zb is " << Zb << endl;}
-      nrdBuffer[buffIndex]= juliaTest(Za,Zb, Ca, Cb); buffIndex++;//RGB value;
-    }
-    if (buffIndex>=bufferSize / 1)//changing /3 to /1 :), it used to be 3 because
-    {
-      cerr << " bufferIndex is >= bufferSize; ie a buffer has been"
-          <<" filled during nrd file creation\n";
-      fwrite(nrdBuffer,buffIndex,sizeof(nrdRGB),output);
-      buffIndex=0;
+      image[row][col] = juliaTest(Za, Zb, Ca, Cb);
     }
   }
-  fwrite(nrdBuffer,buffIndex,sizeof(nrdRGB),output);
-
-  fclose(output);
-  free(nrdBuffer);
 
   //build a output file name based on input parameters
   cerr<< "\nabout to start the badness";
@@ -178,7 +150,7 @@ int main(int argc, char *argv[])
     theSS << ".W_" ;
     theSS << Xmax;
     theSS << ".F_" << functionType;
-    theSS <<  ".bmp";
+    theSS <<  ".png";
     out=theSS.str();
     //convert string to char*
     outfile = &out[0];
@@ -188,6 +160,7 @@ int main(int argc, char *argv[])
   //user entered a outputfile so lets use it
   else{ outfile = argv[1]; }
 
+  image.write(outfile);
   return 0;
   //nrd2bmp("temp.nrd", outfile);
   //silent mode!!!!!!!
@@ -199,11 +172,9 @@ int main(int argc, char *argv[])
   //cause serious problems (full system halt!!!)
 }
 
-
-
-nrdRGB juliaTest(double Za, double Zb, double Ca, double Cb)
+png::rgb_pixel juliaTest(double Za, double Zb, double Ca, double Cb)
 {
-  nrdRGB returnValue(0,0,0);
+  int r;
   double aHistory[MAXITS+1];
   double bHistory[MAXITS+1];
   aHistory[0]=Za;
@@ -229,11 +200,7 @@ nrdRGB juliaTest(double Za, double Zb, double Ca, double Cb)
         if ( ( fabs((float)(Za - aHistory[j])) < TOLERANCE )
           && ( fabs((float)(Zb - bHistory[i])) < TOLERANCE) )
         {
-          //cerr << "found a stable point, orbit value is " << j << endl;
-          returnValue.R=255;
-          returnValue.G=(35*j)%256;   //maybe this will be alittle more interesting
-          returnValue.B=0;
-          return returnValue;
+          return png::rgb_pixel(255, (35*j)%256, 0);
         }
       }
     }
@@ -251,19 +218,14 @@ nrdRGB juliaTest(double Za, double Zb, double Ca, double Cb)
 
   if (i<MAXITS)
   {
-    if( grayScale ){returnValue.R
-      =( (((unsigned char)( acos((double)(MAXITS-2*i)/MAXITS)*cosScale/(PI))*25 )% 256 ) );}
-    else{returnValue.R = 0;}
-    returnValue.G=returnValue.R;
-    returnValue.B=returnValue.R;
-    return returnValue;
+    if( grayScale ){
+      r=( (((unsigned char)( acos((double)(MAXITS-2*i)/MAXITS)*cosScale/(PI))*25 )% 256 ) );}
+    else{r = 0;}
+    return png::rgb_pixel(r, r, r);
   }
   else
   {
-    returnValue.R=255;
-    returnValue.G=(10*i)%256;
-    returnValue.B=0;
-    return returnValue;
+    return png::rgb_pixel(255, (10*i)%256, 0);
   }
 }
 

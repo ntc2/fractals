@@ -7,7 +7,7 @@ all: tmp/julia
 VPATH = src
 
 tmp/julia: julia.cpp functions.h tmp
-	g++ -Wall -o $@ $<
+	g++ -Wall -o $@ $< `libpng-config --ldflags`
 
 tmp:
 	mkdir -p tmp
