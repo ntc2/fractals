@@ -30,6 +30,20 @@ const int MAXITS = 100;
 
 png::rgb_pixel juliaTest(double, double, double, double);
 
+void usage(char *argv[]) {
+  fprintf(stderr,
+          "usage: %s WIDTH_PIXELS REAL0 IMAG0 MAX_REAL_ABS FUN\n\n"
+          "- Pixel height of image is the same a given width, WIDTH_PIXELS.\n"
+          "- The REAL0 and IMAG0 define the constant 'c' in 'z |-> f(z) + c'.\n"
+          "- The MAX_REAL_ABS determines the horizontal range of the picture;\n"
+          "  the vertical range is chosen to be the same and the picture is\n"
+          "  centered at the origin.\n"
+          "- The FUN determines 'f' in 'z |-> f(z) + c; the choices are\n"
+          "  2, 3, 5, 7, or e.\n",
+          argv[0]);
+  exit(2);
+}
+
 //added to avoid monotonous recompile. number represents scale factor for arccos directed
 //greyscale application
 int cosScale = 255;
@@ -57,18 +71,15 @@ int main(int argc, char *argv[])
   int row, col;
   //int grayOrNot=0;
 
-
-  cout << "Desired Image Width:  ";
-  cin >> pixelWidth;
-  //cout << "Desired Image Height:  ";
-  //cin >> pixelHeight;
+  if (argc != 6) {
+    fprintf(stderr, "Wrong number of arguments!\n\n");
+    usage(argv);
+  }
+  sscanf(argv[1], "%d", &pixelWidth);
   pixelHeight= pixelWidth;
-  cout << "Re(c):  ";
-  cin >> Ca;
-  cout << "Im(c):  ";
-  cin >> Cb;
-  cout << "X bound:  +/- ";
-  cin >> Xmax;
+  sscanf(argv[2], "%lf", &Ca);
+  sscanf(argv[3], "%lf", &Cb);
+  sscanf(argv[4], "%lf", &Xmax);
   /*let the spaghetti code begin
   grayOnOff:
   cout << "Gray scale on <1> or off <0> ?  ";
@@ -84,12 +95,7 @@ int main(int argc, char *argv[])
     goto grayOnOff;
   }
   */
-  cout << "Enter gray scale scaling factor between 0 and 255 inclusive  ";
-  cin >> cosScale;
-
-  chooseFunc:
-  cout << "Function to iterate (2,3,7, or e):  ";
-  cin >> functionType;
+  sscanf(argv[5], "%c", &functionType);
 
   png::image< png::rgb_pixel > image(pixelWidth, pixelHeight);
 
@@ -113,7 +119,7 @@ int main(int argc, char *argv[])
     break;
   default:
     cerr << "Invalid choice of functions.\n\n";
-    goto chooseFunc;
+    usage(argv);
   }
 
   factor = 2*Xmax/pixelWidth;
@@ -135,30 +141,25 @@ int main(int argc, char *argv[])
   string out;
   char * outfile;
   //cerr << l << "hello";
-  if( argv[1]==NULL )
-  {
-    cerr<<"\n it has begun";
-    //Stringsream allows srings to be manipulated like strings
-    //still think java is easier
-    stringstream theSS;
-    //concatination isnt all it could be
-    theSS << "P_" << pixelWidth;
-    theSS << ".R_";
-    theSS << Ca;
-    theSS << ".I_" ;
-    theSS << Cb;
-    theSS << ".W_" ;
-    theSS << Xmax;
-    theSS << ".F_" << functionType;
-    theSS <<  ".png";
-    out=theSS.str();
-    //convert string to char*
-    outfile = &out[0];
-    cerr << outfile;
-  }
+  cerr<<"\n it has begun";
 
-  //user entered a outputfile so lets use it
-  else{ outfile = argv[1]; }
+  //Stringsream allows srings to be manipulated like strings
+  //still think java is easier
+  stringstream theSS;
+  //concatination isnt all it could be
+  theSS << "P_" << pixelWidth;
+  theSS << ".R_";
+  theSS << Ca;
+  theSS << ".I_" ;
+  theSS << Cb;
+  theSS << ".W_" ;
+  theSS << Xmax;
+  theSS << ".F_" << functionType;
+  theSS <<  ".png";
+  out=theSS.str();
+  //convert string to char*
+  outfile = &out[0];
+  cerr << outfile;
 
   image.write(outfile);
   return 0;
