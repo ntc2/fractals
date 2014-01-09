@@ -151,6 +151,15 @@ int main(int argc, char *argv[])
 
   for (row=0; row<pixelHeight; row++)
   {
+    // Print progress as percent of rows completed.
+    if ((int)((100 * row)      /pixelHeight) >
+        (int)((100 * (row - 1))/pixelHeight))
+    {
+      fprintf(stderr,
+              "\r%02i%%",
+              (int)((100 * row)/pixelHeight));
+      fflush(stderr);
+    }
     for (col=0; col<pixelWidth; col++)
     {
       double Za=((double)col-(double)pixelWidth/2)*factor;
@@ -160,18 +169,12 @@ int main(int argc, char *argv[])
       image[row][col] = juliaTest(Za, Zb, Ca, Cb);
     }
   }
+  fprintf(stderr, "\r");
 
   //build a output file name based on input parameters
-  cerr<< "\nabout to start the badness";
   string out;
   char * outfile;
-  //cerr << l << "hello";
-  cerr<<"\n it has begun";
-
-  //Stringsream allows srings to be manipulated like strings
-  //still think java is easier
   stringstream theSS;
-  //concatination isnt all it could be
   theSS << "P_" << pixelWidth;
   theSS << ".R_";
   theSS << Ca;
@@ -191,18 +194,10 @@ int main(int argc, char *argv[])
   out=theSS.str();
   //convert string to char*
   outfile = &out[0];
-  cerr << outfile;
+  cerr << outfile << endl;
 
   image.write(outfile);
   return 0;
-  //nrd2bmp("temp.nrd", outfile);
-  //silent mode!!!!!!!
-  //cerr << "\a";
-  /*
-  system(argv[1]);
-  */
-  //tells the system to open the newly created bmp file but seems to
-  //cause serious problems (full system halt!!!)
 }
 
 png::rgb_pixel juliaTest(double Za, double Zb, double Ca, double Cb)
