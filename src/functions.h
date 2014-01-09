@@ -74,11 +74,19 @@ double be(double Za, double Zb)
   return (number*sin(Zb));
 }
 
-class nrdRGB
-{
-  public:
-  unsigned char R;
-  unsigned char G;
-  unsigned char B;
-  nrdRGB(unsigned char Rin, unsigned char Gin, unsigned char Bin) {R=Rin;G=Gin;B=Bin;}
-};
+////////////////////////////////////////////////////////////////
+// Recurrence tests.
+
+int andTest(double Za, double * aHistory,
+            double Zb, double * bHistory,
+            int j, double tolerance) {
+  return ((fabs(Za - aHistory[j]) < tolerance) &&
+          (fabs(Zb - bHistory[j]) < tolerance));
+}
+
+int orTest(double Za, double * aHistory,
+           double Zb, double * bHistory,
+           int j, double tolerance) {
+  return ((fabs(Za - aHistory[j]) < tolerance) ||
+          (fabs(Zb - bHistory[j]) < tolerance));
+}

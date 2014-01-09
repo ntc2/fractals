@@ -11,35 +11,43 @@
 
 using namespace std;
 
-#define TOLERANCE .01
+// #define TOLERANCE .001
+double tolerance;
 #define INFINITY 100000000000000 //10000000000000000000
 //changed max its to a variable to allow runtime modification
 /*
 #define MAXITS 100
 */
 //computer doesnt agree that its such a hot idea so ill try again later
-const int MAXITS = 100;
+//const int MAXITS = 100;
+int maxIts;
 
 #define PI 3.1415926535897932384626433832795028841971693993751
 #define NATHANFLAG false
 #define SLOWMODE true
 
-
-  double (*aFunction)        (double, double);
-  double (*bFunction)        (double, double);
+double (*aFunction) (double, double);
+double (*bFunction) (double, double);
+int (*testFunction) (double, double *, double, double *, int, double);
 
 png::rgb_pixel juliaTest(double, double, double, double);
 
 void usage(char *argv[]) {
   fprintf(stderr,
-          "usage: %s WIDTH_PIXELS REAL0 IMAG0 MAX_REAL_ABS FUN\n\n"
+          "usage: %s WIDTH_PIXELS REAL0 IMAG0 MAX_REAL_ABS FUN TEST TOLERANCE ITS\n\n"
           "- Pixel height of image is the same a given width, WIDTH_PIXELS.\n"
           "- The REAL0 and IMAG0 define the constant 'c' in 'z |-> f(z) + c'.\n"
           "- The MAX_REAL_ABS determines the horizontal range of the picture;\n"
           "  the vertical range is chosen to be the same and the picture is\n"
           "  centered at the origin.\n"
           "- The FUN determines 'f' in 'z |-> f(z) + c; the choices are\n"
-          "  2, 3, 5, 7, or e.\n",
+          "  2, 3, 5, 7, or e.\n"
+          "- The TEST is 'a' or 'o' and determines how recurrence is checked;\n"
+          "  with 'a' (and) both coordinates must recur and with 'o' (or) only one.\n"
+          "- The TOLERANCE determines when two coordinates are close enough\n"
+          "  to be considered recurrent. Tested values are 0.01 and 0.001.\n"
+          "- The ITS is the max number of iterations to try before deciding\n"
+          "  the current point does not escape to infinity. Tested value is 100.\n",
           argv[0]);
   exit(2);
 }
@@ -69,9 +77,10 @@ int main(int argc, char *argv[])
   double Xmax;
   char functionType;
   int row, col;
+  char testType;
   //int grayOrNot=0;
 
-  if (argc != 6) {
+  if (argc != 9) {
     fprintf(stderr, "Wrong number of arguments!\n\n");
     usage(argv);
   }
@@ -96,9 +105,6 @@ int main(int argc, char *argv[])
   }
   */
   sscanf(argv[5], "%c", &functionType);
-
-  png::image< png::rgb_pixel > image(pixelWidth, pixelHeight);
-
   switch(functionType)
   {
   case '2':
@@ -121,6 +127,25 @@ int main(int argc, char *argv[])
     cerr << "Invalid choice of functions.\n\n";
     usage(argv);
   }
+
+  sscanf(argv[6], "%c", &testType);
+  switch(testType)
+  {
+  case 'a':
+    testFunction = andTest;
+    break;
+  case 'o':
+    testFunction = orTest;
+    break;
+  default:
+    fprintf(stderr, "Invalid TEST: %c\n", testType);
+    usage(argv);
+  }
+
+  sscanf(argv[7], "%lf", &tolerance);
+  sscanf(argv[8], "%d", &maxIts);
+
+  png::image< png::rgb_pixel > image(pixelWidth, pixelHeight);
 
   factor = 2*Xmax/pixelWidth;
 
@@ -152,9 +177,16 @@ int main(int argc, char *argv[])
   theSS << Ca;
   theSS << ".I_" ;
   theSS << Cb;
-  theSS << ".W_" ;
+  theSS << ".M_" ;
   theSS << Xmax;
-  theSS << ".F_" << functionType;
+  theSS << ".F_";
+  theSS << functionType;
+  theSS << ".T_";
+  theSS << testType;
+  theSS << ".T_";
+  theSS << tolerance;
+  theSS << ".I_";
+  theSS << maxIts;
   theSS <<  ".png";
   out=theSS.str();
   //convert string to char*
@@ -176,14 +208,14 @@ int main(int argc, char *argv[])
 png::rgb_pixel juliaTest(double Za, double Zb, double Ca, double Cb)
 {
   int r;
-  double aHistory[MAXITS+1];
-  double bHistory[MAXITS+1];
+  double aHistory[maxIts+1];
+  double bHistory[maxIts+1];
   aHistory[0]=Za;
   bHistory[0]=Zb;
   long i=0;
   //while the abs(Z) < "infinity" && we're still iterating
   //note that both sides of inequality are squared for efficiency
-  while (( pow(Za,2) + pow(Zb,2) <= pow(INFINITY,2)) && (i<MAXITS))//the square of infinity ¶:)
+  while (( pow(Za,2) + pow(Zb,2) <= pow(INFINITY,2)) && (i<maxIts))//the square of infinity ¶:)
   {
     i++;
     aHistory[i] = aFunction(Za,Zb) + Ca;
@@ -196,10 +228,7 @@ png::rgb_pixel juliaTest(double Za, double Zb, double Ca, double Cb)
     {
       for (int j=0;j<i;j++)
       {
-        if(false){cerr << "checking for stable point, " << i << ", " << j << endl;}
-        //if ((Za==aHistory[j])&&(Zb==bHistory[i]))
-        if ( ( fabs((float)(Za - aHistory[j])) < TOLERANCE )
-          && ( fabs((float)(Zb - bHistory[i])) < TOLERANCE) )
+        if (testFunction(Za, aHistory, Zb, bHistory, j, tolerance))
         {
           return png::rgb_pixel(255, (35*j)%256, 0);
         }
@@ -217,10 +246,10 @@ png::rgb_pixel juliaTest(double Za, double Zb, double Ca, double Cb)
     */
   }
 
-  if (i<MAXITS)
+  if (i<maxIts)
   {
     if( grayScale ){
-      r=( (((unsigned char)( acos((double)(MAXITS-2*i)/MAXITS)*cosScale/(PI))*25 )% 256 ) );}
+      r=( (((unsigned char)( acos((double)(maxIts-2*i)/maxIts)*cosScale/(PI))*25 )% 256 ) );}
     else{r = 0;}
     return png::rgb_pixel(r, r, r);
   }
