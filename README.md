@@ -12,6 +12,6 @@ See also: comically ugly web page.
 Dependencies
 ------------
 
-Lib png++ (http://www.nongnu.org/pngpp/doc/0.2.5/):
+Lib [png++](http://www.nongnu.org/pngpp/doc/0.2.5/):
 
     sudo aptitude install libpng++-dev
